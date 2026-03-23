@@ -1,3 +1,7 @@
+## This Fork
+- atempt to make mode for open file in current hover
+
+
 ## Obsidian Hover Editor
 
 This plugin enhances the core "Page Preview" plugin by turning the hover popover into a full featured editor instance.
