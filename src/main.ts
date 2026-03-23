@@ -491,16 +491,25 @@ export default class HoverEditorPlugin extends Plugin {
   registerActivePopoverHandler() {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
-        HoverEditor.activePopover?.hoverEl.removeClass("is-active");
-        const hoverEditor = (HoverEditor.activePopover = leaf ? HoverEditor.forLeaf(leaf) : undefined);
-        if (hoverEditor && leaf) {
-          hoverEditor.activate();
-          hoverEditor.hoverEl.addClass("is-active");
-          const titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
+        const previousActivePopover = HoverEditor.activePopover;
+        previousActivePopover?.hoverEl.removeClass("is-active");
+        const nextActivePopover = leaf ? HoverEditor.forLeaf(leaf) : undefined;
+        if (nextActivePopover) {
+          HoverEditor.activePopover = nextActivePopover;
+        } else if (
+          previousActivePopover &&
+          !HoverEditor.activePopovers().includes(previousActivePopover)
+        ) {
+          HoverEditor.activePopover = undefined;
+        }
+        if (nextActivePopover && leaf) {
+          nextActivePopover.activate();
+          nextActivePopover.hoverEl.addClass("is-active");
+          const titleEl = nextActivePopover.hoverEl.querySelector(".popover-title");
           if (!titleEl) return;
           titleEl.textContent = leaf.view?.getDisplayText();
           if (leaf?.view?.getViewType()) {
-            hoverEditor.hoverEl.setAttribute("data-active-view-type", leaf.view.getViewType());
+            nextActivePopover.hoverEl.setAttribute("data-active-view-type", leaf.view.getViewType());
           }
           if (leaf.view?.file?.path) {
             titleEl.setAttribute("data-path", leaf.view.file.path);
@@ -638,6 +647,36 @@ export default class HoverEditorPlugin extends Plugin {
           if (!checking) {
             const newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
             newLeaf.openFile(activeFile);
+          }
+          return true;
+        }
+        return false;
+      },
+    });
+    this.addCommand({
+      id: "open-current-file-in-active-popover",
+      name: "Open current file in active Hover Editor",
+      checkCallback: (checking: boolean) => {
+        const activeFile = this.app.workspace.activeEditor?.file ?? this.app.workspace.getActiveFile();
+        const activeHover = this.app.workspace.activeLeaf
+          ? HoverEditor.forLeaf(this.app.workspace.activeLeaf)
+          : undefined;
+        const popovers = this.activePopovers;
+        const lastActiveHover =
+          HoverEditor.activePopover && popovers.includes(HoverEditor.activePopover)
+            ? HoverEditor.activePopover
+            : undefined;
+        const hoverEditor = activeHover ?? lastActiveHover ?? popovers[popovers.length - 1];
+        if (activeFile) {
+          if (!checking) {
+            const hoverLeaf = hoverEditor?.leaves()?.[0];
+            if (hoverLeaf) {
+              this.app.workspace.setActiveLeaf(hoverLeaf, false, true);
+              hoverLeaf.openFile(activeFile);
+            } else {
+              const newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
+              newLeaf.openFile(activeFile);
+            }
           }
           return true;
         }

@@ -1,6 +1,6 @@
 {
-  "id": "obsidian-hover-editor",
-  "name": "Hover Editor",
+  "id": "obsidian-hover-editor-my-fork",
+  "name": "Hover Editor (My Fork)",
   "version": "0.11.28",
   "minAppVersion": "1.5.8",
   "description": "Transform the Page Preview hover popover into a fully working editor instance",
